@@ -10,7 +10,12 @@ class ClienteChat:
         self.sock = None
         self.conectado = False
 
-        # Entrada para IP e porta
+        # Dados do usuário
+        self.apelido = ""
+        self.sala = ""
+        self.senha = ""
+
+        # Área de conexão
         tk.Label(root, text="IP do Servidor:").grid(row=0, column=0)
         self.entry_ip = tk.Entry(root)
         self.entry_ip.insert(0, "127.0.0.1")
@@ -21,29 +26,28 @@ class ClienteChat:
         self.entry_porta.insert(0, "5555")
         self.entry_porta.grid(row=1, column=1)
 
-        # Entrada para Sala, Senha e Apelido
         tk.Label(root, text="Sala:").grid(row=2, column=0)
         self.entry_sala = tk.Entry(root)
         self.entry_sala.insert(0, "geral")
         self.entry_sala.grid(row=2, column=1)
 
-        tk.Label(root, text="Senha da Sala:").grid(row=3, column=0)
+        tk.Label(root, text="Senha:").grid(row=3, column=0)
         self.entry_senha = tk.Entry(root, show="*")
         self.entry_senha.grid(row=3, column=1)
 
-        tk.Label(root, text="Seu Apelido:").grid(row=4, column=0)
+        tk.Label(root, text="Apelido:").grid(row=4, column=0)
         self.entry_apelido = tk.Entry(root)
-        self.entry_apelido.insert(0, "Convidado")
+        self.entry_apelido.insert(0, "SeuNome")
         self.entry_apelido.grid(row=4, column=1)
 
         self.btn_conectar = tk.Button(root, text="Conectar", command=self.conectar)
         self.btn_conectar.grid(row=5, column=0, columnspan=2, pady=5)
 
-        # Área de chat
+        # Área do chat
         self.chat_area = scrolledtext.ScrolledText(root, state="disabled", width=50, height=20)
         self.chat_area.grid(row=6, column=0, columnspan=2)
 
-        # Campo de mensagem
+        # Entrada de mensagem
         self.entry_mensagem = tk.Entry(root, width=40)
         self.entry_mensagem.grid(row=7, column=0)
 
@@ -54,28 +58,26 @@ class ClienteChat:
         try:
             ip = self.entry_ip.get()
             porta = int(self.entry_porta.get())
-            sala = self.entry_sala.get()
-            senha = self.entry_senha.get()
-            apelido = self.entry_apelido.get()
+            self.sala = self.entry_sala.get()
+            self.senha = self.entry_senha.get()
+            self.apelido = self.entry_apelido.get()
 
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((ip, porta))
 
-            # Envia sala|senha|apelido
-            dados = f"{sala}|{senha}|{apelido}"
+            dados = f"{self.sala}|{self.senha}|{self.apelido}"
             self.sock.send(dados.encode())
 
-            # Aguarda possível resposta
             resposta = self.sock.recv(1024).decode()
-            if "Senha incorreta" in resposta:
+            if "Senha incorreta" in resposta or "inválido" in resposta:
                 messagebox.showerror("Erro", resposta)
                 self.sock.close()
                 return
 
-            self.conectado = True
             self.adicionar_chat(resposta)
-
+            self.conectado = True
             threading.Thread(target=self.receber_mensagem, daemon=True).start()
+
         except Exception as e:
             messagebox.showerror("Erro de conexão", str(e))
 

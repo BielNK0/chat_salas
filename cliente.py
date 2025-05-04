@@ -4,26 +4,32 @@ import threading
 def receber_mensagens(sock):
     while True:
         try:
-            mensagem = sock.recv(1024).decode()
-            print(mensagem)
+            msg = sock.recv(1024).decode()
+            print("\n" + msg)
         except:
-            print("Conexão encerrada.")
             break
 
-ip_servidor = input("IP do servidor: ")
+ip = input("IP do servidor: ")
+porta = int(input("Porta: "))
 sala = input("Nome da sala: ")
+senha = input("Senha da sala: ")
+apelido = input("Seu apelido: ")
 
-cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-cliente.connect((ip_servidor, 5555))
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect((ip, porta))
 
-cliente.send(sala.encode())
+# Envia: sala|senha|apelido
+sock.send(f"{sala}|{senha}|{apelido}".encode())
 
-thread = threading.Thread(target=receber_mensagens, args=(cliente,))
-thread.start()
+resposta = sock.recv(1024).decode()
+print(resposta)
+
+# Inicia thread para ouvir mensagens
+threading.Thread(target=receber_mensagens, daemon=True, args=(sock,)).start()
 
 while True:
-    msg = input()
-    if msg.lower() == "/sair":
-        cliente.close()
+    try:
+        msg = input()
+        sock.send(msg.encode())
+    except:
         break
-    cliente.send(msg.encode())
